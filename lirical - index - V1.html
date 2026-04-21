@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Companion V7</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Orbitron:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Variables y configuración base del tema futurista */
+        :root {
+            --color-bg-dark: #060810;
+            --color-bg-panel: #11152a;
+            --color-neon-cyan: #00ffff;
+            --color-neon-magenta: #ff00ff;
+            --color-neon-blue: #4d4dff;
+            --color-neon-green: #00ff00;
+            --color-neon-yellow: #ffff00;
+            --font-mono: 'Roboto Mono', monospace;
+            --font-ui: 'Inter', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+        }
+
+        /* Correction: The body doesn't scroll, the inner content does. */
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background-color: var(--color-bg-dark);
+            color: #e0e0e0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- Glitch and Neon styles and animations (Improved) --- */
+        .glitch-text {
+            position: relative;
+            font-family: var(--font-title);
+            font-size: 4rem;
+            color: var(--color-neon-blue);
+            text-shadow: 0 0 15px var(--color-neon-blue), 0 0 30px var(--color-neon-cyan);
+            animation: text-glitch 5s infinite;
+        }
+
+        @keyframes text-glitch {
+            0% { text-shadow: 0 0 15px var(--color-neon-blue), 0 0 30px var(--color-neon-cyan); }
+            5% { transform: skewX(-10deg); text-shadow: 2px -2px 0 var(--color-neon-magenta), -2px 2px 0 var(--color-neon-cyan); }
+            10% { transform: skewX(0); text-shadow: 0 0 15px var(--color-neon-blue), 0 0 30px var(--color-neon-cyan); }
+            20% { transform: skewX(8deg); text-shadow: -3px 3px 0 var(--color-neon-magenta), 3px -3px 0 var(--color-neon-cyan); }
+            25% { transform: skewX(0); text-shadow: 0 0 15px var(--color-neon-blue), 0 0 30px var(--color-neon-cyan); }
+            30% { text-shadow: 0 0 15px var(--color-neon-blue), 0 0 30px var(--color-neon-cyan); }
+            100% { text-shadow: 0 0 15px var(--color-neon-blue), 0 0 30px var(--color-neon-cyan); }
+        }
+
+        .neon-button {
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px var(--color-neon-cyan);
+            background: rgba(0, 255, 255, 0.15);
+            color: var(--color-neon-cyan);
+            border: 2px solid var(--color-neon-cyan);
+            text-shadow: 0 0 5px var(--color-neon-cyan);
+        }
+        .neon-button:hover {
+            box-shadow: 0 0 25px var(--color-neon-cyan), 0 0 50px var(--color-neon-blue);
+            transform: scale(1.05) translateY(-2px);
+            background: rgba(0, 255, 255, 0.25);
+            border-color: var(--color-neon-blue);
+            color: var(--color-neon-blue);
+            text-shadow: 0 0 10px var(--color-neon-blue);
+        }
+
+        /* Editor and its components styles (Improved) */
+        #editor-container {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            background-color: var(--color-bg-dark);
+            border-right: 2px solid var(--color-neon-blue);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+            transition: margin-left 0.3s ease;
+        }
+
+        #line-numbers {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.2);
+            padding: 1rem 0.5rem 1rem 1rem;
+            text-align: right;
+            user-select: none;
+            line-height: 1.5rem;
+            width: 3rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        #code-editor {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            padding: 1rem;
+            background-color: transparent;
+            color: #ffffff;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.5rem;
+            border: none;
+            outline: none;
+            resize: none;
+            caret-color: var(--color-neon-cyan);
+            white-space: pre-wrap;
+            overflow-y: auto; /* Correction: Only the editor scrolls */
+        }
+        
+        #main-app {
+            height: 100vh;
+        }
+
+        /* NEW: Sidebar styles */
+        #sidebar {
+            width: 16rem;
+            background-color: var(--color-bg-panel);
+            border-right: 2px solid var(--color-neon-blue);
+            padding: 1rem;
+            transition: width 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        #sidebar.collapsed {
+            width: 6rem;
+        }
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #e0e0e0;
+        }
+        .sidebar-item:hover {
+            background-color: rgba(0, 255, 255, 0.1);
+            color: var(--color-neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+        .sidebar-item-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: opacity 0.3s ease;
+        }
+        #sidebar.collapsed .sidebar-item-label {
+            opacity: 0;
+            width: 0;
+        }
+        .sidebar-toggle-btn {
+            background-color: var(--color-neon-blue);
+            transition: transform 0.3s ease;
+        }
+        #sidebar.collapsed .sidebar-toggle-btn {
+            transform: rotate(180deg);
+        }
+
+        /* Gemini panel and chat (Improved) */
+        #gemini-chat-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 24rem;
+            background-color: var(--color-bg-panel);
+            border-left: 2px solid var(--color-neon-magenta);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            display: flex;
+            flex-direction: column;
+            z-index: 50;
+            box-shadow: -5px 0 30px rgba(255, 0, 255, 0.3);
+        }
+
+        #gemini-chat-panel.open {
+            transform: translateX(0);
+        }
+        
+        .chat-message {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            word-wrap: break-word;
+            font-family: var(--font-ui);
+        }
+
+        .user-message {
+            background-color: rgba(77, 77, 255, 0.3);
+            color: #ffffff;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+            border-left: 2px solid var(--color-neon-blue);
+        }
+
+        .gemini-message {
+            background-color: rgba(0, 255, 255, 0.3);
+            color: #000000;
+            margin-right: auto;
+            border-bottom-left-radius: 0;
+            border-right: 2px solid var(--color-neon-cyan);
+        }
+
+        /* Progress bars styles (Holographic) */
+        .progress-bar-container {
+            width: 100%;
+            height: 1.5rem;
+            background-color: #2e2e4a;
+            border-radius: 9999px;
+            overflow: hidden;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
+            margin-top: 0.5rem;
+            border: 1px solid var(--color-neon-blue);
+            position: relative;
+        }
+        .progress-bar-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, rgba(77, 77, 255, 0.3) 0%, transparent 70%);
+            animation: scan-line 3s infinite linear;
+        }
+        @keyframes scan-line {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--color-neon-cyan), var(--color-neon-blue));
+            transition: width 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            position: relative;
+        }
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.2);
+            animation: progress-pulse 1s infinite;
+        }
+        @keyframes progress-pulse {
+            0% { transform: scaleX(0); opacity: 0.5; }
+            50% { transform: scaleX(1); opacity: 0; }
+            100% { transform: scaleX(0); opacity: 0.5; }
+        }
+
+        /* Styles for the modal popups */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: var(--color-bg-panel);
+            border: 2px solid var(--color-neon-magenta);
+            box-shadow: 0 0 25px rgba(255, 0, 255, 0.5);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .clickable-title {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-[--color-bg-dark] text-white">
+
+    <!-- NEW: Update notification banner -->
+    <div id="update-banner" class="hidden fixed top-0 left-0 w-full p-2 bg-green-600 text-white text-center font-bold z-[1000]">
+        Actualización disponible! Recargando...
+    </div>
+
+    <!-- Welcome Screen -->
+    <section id="welcome-screen" class="flex flex-col items-center justify-center h-full text-center p-8">
+        <h1 class="glitch-text text-5xl md:text-7xl font-bold mb-4">Code Companion</h1>
+        <p class="text-xl md:text-2xl mb-8 font-mono">Asistente IA y Editor de Texto</p>
+        <div class="flex flex-col md:flex-row gap-4">
+            <button id="new-project-btn-welcome" class="neon-button px-8 py-3 rounded-md text-lg font-bold">
+                Iniciar Nuevo Proyecto
+            </button>
+            <button id="continue-project-btn-welcome" class="neon-button px-8 py-3 rounded-md text-lg font-bold">
+                Continuar Proyecto Anterior
+            </button>
+            <!-- NEW: Open file button on welcome screen -->
+            <button id="welcome-open-file-btn" class="neon-button px-8 py-3 rounded-md text-lg font-bold">
+                Abrir Archivo
+            </button>
+        </div>
+    </section>
+
+    <!-- Main Interface (initially hidden) -->
+    <section id="main-app" class="hidden h-screen w-screen flex">
+        <!-- NEW: Collapsible Sidebar Menu -->
+        <aside id="sidebar" class="relative">
+            <div class="flex justify-end p-2 mb-4">
+                <button id="sidebar-toggle-btn" class="sidebar-toggle-btn w-8 h-8 rounded-full flex items-center justify-center text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+            </div>
+            <nav class="space-y-2">
+                <div id="new-project-btn" class="sidebar-item" title="Nuevo Proyecto">
+                    <!-- Icono para Nuevo Proyecto (Archivo) -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span class="sidebar-item-label">Nuevo Proyecto</span>
+                </div>
+                <div id="open-file-btn" class="sidebar-item" title="Abrir Archivo">
+                    <!-- Icono para Abrir Archivo -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v10a2 2 0 01-2 2H5z"></path></svg>
+                    <span class="sidebar-item-label">Abrir Archivo</span>
+                </div>
+                <div id="save-btn" class="sidebar-item" title="Guardar">
+                    <!-- Icono para Guardar -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-3m-1-4l-3 3m0 0l-3-3m3 3V4m-9 11h9"></path></svg>
+                    <span class="sidebar-item-label">Guardar</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main content area -->
+        <div class="flex-1 flex flex-col relative overflow-hidden">
+            <!-- Top toolbar -->
+            <header class="flex items-center justify-between p-4 bg-[--color-bg-panel] border-b-2 border-[--color-neon-cyan] shadow-md">
+                <div class="flex items-center">
+                    <h2 class="text-xl font-bold font-title text-[--color-neon-blue]">
+                        Code Companion: 
+                        <!-- NEW: Make filename-title clickable -->
+                        <span id="filename-title" class="text-lg font-ui text-gray-300 clickable-title">Proyecto sin título</span>
+                    </h2>
+                    <!-- Gamification panel -->
+                    <div id="gamification-panel" class="ml-8 hidden md:block">
+                        <h3 class="text-xs text-gray-400">Progreso de la Misión</h3>
+                        <div class="progress-bar-container w-48">
+                            <div id="progress-bar-mission" class="progress-bar" style="width: 0%;"></div>
+                        </div>
+                        <span id="progress-text" class="text-xs text-gray-500 mt-1 block">0% completado</span>
+                    </div>
+                </div>
+                <!-- Removed Download button -->
+            </header>
+
+            <!-- Editor and chat container -->
+            <div class="flex-1 flex relative overflow-hidden">
+                <!-- Main editor container -->
+                <div id="editor-container">
+                    <div id="line-numbers"></div>
+                    <textarea id="code-editor" spellcheck="false"></textarea>
+                </div>
+
+                <!-- Floating Gemini button -->
+                <button id="gemini-float-btn" class="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-full bg-[--color-neon-blue] hover:bg-[--color-neon-cyan] transition-colors duration-300 shadow-lg flex items-center justify-center p-2">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full text-white">
+                        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 17c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z" fill="currentColor"/>
+                        <path d="M12 9a3 3 0 100 6 3 3 0 000-6z" fill="currentColor"/>
+                    </svg>
+                </button>
+                
+                <!-- Gemini chat panel -->
+                <div id="gemini-chat-panel">
+                    <div class="p-4 flex items-center justify-between border-b-2 border-gray-600">
+                        <h3 class="font-bold font-title text-[--color-neon-blue]">Asistente Gemini</h3>
+                        <button id="close-chat-btn" class="text-gray-400 hover:text-white transition-colors duration-200">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto">
+                        <div class="chat-message gemini-message">Hola! Soy tu asistente de líricas. Estoy aquí para ayudarte a escribir sorprendentes canciones.</div>
+                    </div>
+                    <div class="p-4 border-t-2 border-gray-600 flex items-center">
+                        <input type="text" id="chat-input" placeholder="Pregunta, establece una misión..." class="flex-1 p-2 bg-[--color-bg-dark] rounded-md outline-none text-sm focus:ring-1 ring-[--color-neon-cyan] border-none">
+                        <button id="chat-send-btn" class="ml-2 px-4 py-2 bg-[--color-neon-blue] text-white rounded-md font-bold text-sm hover:bg-[--color-neon-cyan] transition-colors duration-200">Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal for file download/save-as -->
+    <div id="download-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold font-title text-[--color-neon-cyan] mb-4">Descargar Archivo</h3>
+            <p class="text-sm mb-4">Ingresa el nombre del archivo y la extensión. Por ejemplo: `index.html`</p>
+            <input type="text" id="filename-input" placeholder="nombre.ext" class="w-full p-2 bg-[--color-bg-dark] rounded-md text-white focus:outline-none focus:ring-2 ring-[--color-neon-blue] mb-4">
+            <div class="flex justify-end gap-2">
+                <button id="cancel-download" class="px-4 py-2 text-sm rounded-md bg-gray-600 hover:bg-gray-500">Cancelar</button>
+                <button id="confirm-download" class="neon-button px-4 py-2 text-sm rounded-md">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for saving an existing file -->
+    <div id="save-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold font-title text-[--color-neon-cyan] mb-4">Guardar Archivo</h3>
+            <p class="text-sm mb-4">¿Quieres guardar los cambios en <span id="save-filename" class="font-mono text-white"></span>?</p>
+            <div class="flex items-center mb-4">
+                <input type="checkbox" id="save-as-new-version" class="form-checkbox h-4 w-4 text-[--color-neon-blue] bg-[--color-bg-dark] border-[--color-neon-cyan] rounded-md focus:ring-2 focus:ring-offset-2 focus:ring-[--color-neon-blue]">
+                <label for="save-as-new-version" class="ml-2 text-sm text-gray-400">Guardar como nueva versión</label>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button id="cancel-save" class="px-4 py-2 text-sm rounded-md bg-gray-600 hover:bg-gray-500">Cancelar</button>
+                <button id="confirm-save" class="neon-button px-4 py-2 text-sm rounded-md">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Modal for showing the file path -->
+    <div id="path-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold font-title text-[--color-neon-cyan] mb-4">Ubicación del Archivo</h3>
+            <p class="text-sm mb-4">El nombre completo del archivo actual es:</p>
+            <p id="path-display" class="font-mono text-white p-2 bg-[--color-bg-dark] rounded-md break-all"></p>
+            <div class="flex justify-end mt-4">
+                <button id="close-path-modal" class="neon-button px-4 py-2 text-sm rounded-md">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js').then(registration => {
+                    console.log('ServiceWorker registered successfully: ', registration);
+                    // NEW: Listen for changes in the service worker
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // NEW: Show update banner when a new version is ready
+                                document.getElementById('update-banner').classList.remove('hidden');
+                                console.log('Nueva versión del Service Worker instalada. Actualizando...');
+                                setTimeout(() => window.location.reload(), 2000); // Forzar una recarga después de 2 segundos
+                            }
+                        });
+                    });
+                }).catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
+        // Global state object for the application
+        const appState = {
+            editorContent: '',
+            chatHistory: [{ role: 'gemini', text: 'Hola! Soy tu asistente de líricas. Estoy aquí para ayudarte a escribir sorprendentes canciones.' }],
+            progress: 0,
+            goal: 100, // Initial goal, e.g., 100 lines of code
+            activeMission: null,
+            isSaving: false,
+            geminiWaiting: false
+        };
+
+        // Reference for the currently open file, for permission persistence
+        let currentFileHandle = null;
+
+        // References to DOM elements
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const mainApp = document.getElementById('main-app');
+        // Updated button IDs for welcome screen
+        const newProjectBtnWelcome = document.getElementById('new-project-btn-welcome');
+        const continueProjectBtnWelcome = document.getElementById('continue-project-btn-welcome');
+        const welcomeOpenFileBtn = document.getElementById('welcome-open-file-btn');
+        
+        const codeEditor = document.getElementById('code-editor');
+        const lineNumbers = document.getElementById('line-numbers');
+        const geminiFloatBtn = document.getElementById('gemini-float-btn');
+        const geminiChatPanel = document.getElementById('gemini-chat-panel');
+        const closeChatBtn = document.getElementById('close-chat-btn');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const progressBarMission = document.getElementById('progress-bar-mission');
+        const progressText = document.getElementById('progress-text');
+        
+        // Sidebar elements
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+        const newProjectBtn = document.getElementById('new-project-btn');
+        const openFileBtn = document.getElementById('open-file-btn');
+        const saveBtn = document.getElementById('save-btn');
+        
+        const filenameTitle = document.getElementById('filename-title');
+        
+        // Modal elements for saving
+        const saveModal = document.getElementById('save-modal');
+        const saveFilenameSpan = document.getElementById('save-filename');
+        const saveAsNewVersionCheckbox = document.getElementById('save-as-new-version');
+        const cancelSaveBtn = document.getElementById('cancel-save');
+        const confirmSaveBtn = document.getElementById('confirm-save');
+
+        // Modal elements for path
+        const pathModal = document.getElementById('path-modal');
+        const pathDisplay = document.getElementById('path-display');
+        const closePathModalBtn = document.getElementById('close-path-modal');
+
+
+        // --- Gemini API Logic ---
+        async function callGeminiApi(prompt) {
+            if (appState.geminiWaiting) return "Espera a que termine la respuesta actual.";
+            appState.geminiWaiting = true;
+
+            const chatHistory = appState.chatHistory.map(msg => ({
+                role: msg.role === 'gemini' ? 'model' : 'user',
+                parts: [{ text: msg.text }]
+            }));
+
+            chatHistory.push({ role: 'user', parts: [{ text: prompt }] });
+            
+            const payload = { contents: chatHistory };
+            const apiKey = "AIzaSyBu9yFSwcL-DJpxhKdlZupFhnfSEzm4U10";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            let retryCount = 0;
+            const maxRetries = 5;
+            let delay = 1000; // 1 second
+
+            while (retryCount < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 429) {
+                            console.warn(`Too many requests. Retrying in ${delay / 1000} seconds...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2; // Exponential backoff
+                            retryCount++;
+                            continue;
+                        } else {
+                            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                        }
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        return text;
+                    } else {
+                        console.error('Unexpected response structure:', result);
+                        return "Lo siento, no pude generar una respuesta. Por favor, intenta de nuevo.";
+                    }
+                } catch (error) {
+                    console.error('Error calling Gemini API:', error);
+                    return `Ocurrió un error inesperado al conectar con Gemini. Mensaje: ${error.message}. Por favor, asegúrate de que la aplicación se está ejecutando en un entorno que soporta la API.`;
+                }
+            }
+            appState.geminiWaiting = false;
+            return "Lo siento, la API no respondió después de varios intentos. Por favor, revisa tu conexión o intenta más tarde.";
+        }
+        
+        async function handleGeminiResponse(userMessage) {
+            addChatMessage('user', userMessage);
+            chatInput.value = ''; // Clear input
+            
+            // Show a loading indicator
+            const loadingMessageDiv = addChatMessage('gemini', 'Escribiendo respuesta...');
+            loadingMessageDiv.classList.add('loading-indicator');
+
+            const responseText = await callGeminiApi(userMessage);
+
+            // Remove loading indicator and show the response
+            loadingMessageDiv.textContent = responseText;
+            loadingMessageDiv.classList.remove('loading-indicator');
+            
+            // Update chat state
+            appState.chatHistory.push({ role: 'user', text: userMessage });
+            appState.chatHistory.push({ role: 'gemini', text: responseText });
+            appState.geminiWaiting = false;
+
+            saveAppState();
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll
+        }
+        
+        // --- Utility Functions ---
+        function addChatMessage(role, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${role}-message`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return messageDiv;
+        }
+
+        function updateLineNumbers() {
+            const lines = codeEditor.value.split('\n').length;
+            let numbersHtml = '';
+            for (let i = 1; i <= lines; i++) {
+                numbersHtml += `<span>${i}</span><br>`;
+            }
+            lineNumbers.innerHTML = numbersHtml;
+        }
+
+        function updateProgressBar() {
+            const lines = codeEditor.value.split('\n').length;
+            const progress = Math.min(100, Math.floor((lines / appState.goal) * 100));
+            progressBarMission.style.width = `${progress}%`;
+            progressText.textContent = `${progress}% completado (líneas: ${lines})`;
+        }
+
+        // Automatic saving to localStorage
+        let saveTimeout;
+        function saveAppState() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                const stateToSave = {
+                    editorContent: appState.editorContent,
+                    chatHistory: appState.chatHistory,
+                    progress: appState.progress,
+                    goal: appState.goal,
+                    activeMission: appState.activeMission
+                };
+                localStorage.setItem('codeCompanionState', JSON.stringify(stateToSave));
+                console.log('State saved automatically.');
+            }, 1000);
+        }
+
+        function loadAppState() {
+            const savedState = localStorage.getItem('codeCompanionState');
+            if (savedState) {
+                const parsedState = JSON.parse(savedState);
+                Object.assign(appState, parsedState);
+                codeEditor.value = appState.editorContent;
+                chatMessages.innerHTML = ''; // Clear old messages
+                appState.chatHistory.forEach(msg => addChatMessage(msg.role, msg.text));
+                updateLineNumbers();
+                updateProgressBar();
+                console.log('State loaded from localStorage.');
+            }
+        }
+        
+        // --- File System Access API Functions ---
+        async function openFile() {
+            try {
+                [currentFileHandle] = await window.showOpenFilePicker();
+                const file = await currentFileHandle.getFile();
+                const content = await file.text();
+                
+                codeEditor.value = content;
+                appState.editorContent = content;
+                updateLineNumbers();
+                updateProgressBar();
+                filenameTitle.textContent = currentFileHandle.name;
+                saveAppState();
+
+                // Hide welcome screen and show main app
+                welcomeScreen.classList.add('hidden');
+                mainApp.classList.remove('hidden');
+                codeEditor.focus();
+            } catch (error) {
+                console.error('Error opening file:', error);
+            }
+        }
+        
+        // Function to handle saving, shows modal first
+        function saveFile() {
+            if (currentFileHandle) {
+                // If a file is open, show the save confirmation modal
+                saveFilenameSpan.textContent = currentFileHandle.name;
+                saveAsNewVersionCheckbox.checked = false;
+                saveModal.classList.remove('hidden');
+            } else {
+                // If no file is open, use saveAs
+                saveFileAs();
+            }
+        }
+        
+        async function confirmSave() {
+            saveModal.classList.add('hidden');
+            try {
+                if (currentFileHandle) {
+                    if (saveAsNewVersionCheckbox.checked) {
+                        const filename = currentFileHandle.name;
+                        const lastDotIndex = filename.lastIndexOf('.');
+                        let baseName = filename.substring(0, lastDotIndex);
+                        const extension = filename.substring(lastDotIndex + 1) || '';
+                        let nextVersion = 1;
+
+                        const versionPattern = / - V(\d+)$/;
+                        const versionMatch = baseName.match(versionPattern);
+
+                        if (versionMatch) {
+                            nextVersion = parseInt(versionMatch[1]) + 1;
+                            baseName = baseName.replace(versionPattern, '');
+                        }
+                        
+                        const newFilename = `${baseName} - V${nextVersion}.${extension}`;
+
+                        const handle = await window.showSaveFilePicker({ suggestedName: newFilename });
+                        const writable = await handle.createWritable();
+                        await writable.write(codeEditor.value);
+                        await writable.close();
+                        currentFileHandle = handle;
+                        filenameTitle.textContent = currentFileHandle.name;
+                        console.log('File saved as new version:', handle.name);
+                    } else {
+                        const writable = await currentFileHandle.createWritable();
+                        await writable.write(codeEditor.value);
+                        await writable.close();
+                        console.log('File saved successfully.');
+                    }
+                }
+            } catch (error) {
+                console.error('Error saving file:', error);
+            }
+        }
+
+        async function saveFileAs() {
+            try {
+                const handle = await window.showSaveFilePicker();
+                const writable = await handle.createWritable();
+                await writable.write(codeEditor.value);
+                await writable.close();
+                currentFileHandle = handle;
+                filenameTitle.textContent = currentFileHandle.name;
+                console.log('File saved successfully as:', handle.name);
+            } catch (error) {
+                console.error('Error saving file as:', error);
+            }
+        }
+        
+        // --- Event Listeners ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // Show the welcome screen on load
+            welcomeScreen.classList.remove('hidden');
+        });
+
+        // Event listeners for welcome screen buttons
+        newProjectBtnWelcome.addEventListener('click', () => {
+            welcomeScreen.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+            codeEditor.focus();
+            
+            // Reset state
+            appState.editorContent = '';
+            appState.chatHistory = [{ role: 'gemini', text: 'Hola! Soy tu asistente de líricas. Estoy aquí para ayudarte a escribir sorprendentes canciones.' }];
+            appState.progress = 0;
+            appState.goal = 100;
+            appState.activeMission = null;
+            currentFileHandle = null; // Reset file handle
+
+            codeEditor.value = '';
+            chatMessages.innerHTML = '';
+            addChatMessage('gemini', 'Hola! Soy tu asistente de líricas. Estoy aquí para ayudarte a escribir sorprendentes canciones.');
+            updateLineNumbers();
+            updateProgressBar();
+            filenameTitle.textContent = "Proyecto sin título";
+        });
+
+        continueProjectBtnWelcome.addEventListener('click', () => {
+            welcomeScreen.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+            loadAppState();
+            codeEditor.focus();
+            filenameTitle.textContent = "Proyecto sin título"; // We can't restore the saved filename
+        });
+
+        welcomeOpenFileBtn.addEventListener('click', openFile);
+
+        codeEditor.addEventListener('input', () => {
+            appState.editorContent = codeEditor.value;
+            updateLineNumbers();
+            updateProgressBar();
+            saveAppState();
+        });
+
+        // Sync scroll between editor and line numbers
+        codeEditor.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = codeEditor.scrollTop;
+        });
+
+        // Toggle chat panel
+        geminiFloatBtn.addEventListener('click', () => {
+            geminiChatPanel.classList.toggle('open');
+        });
+
+        closeChatBtn.addEventListener('click', () => {
+            geminiChatPanel.classList.remove('open');
+        });
+
+        // Send message in chat
+        chatSendBtn.addEventListener('click', () => {
+            if (chatInput.value.trim() !== '') {
+                handleGeminiResponse(chatInput.value.trim());
+            }
+        });
+
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && chatInput.value.trim() !== '') {
+                handleGeminiResponse(chatInput.value.trim());
+            }
+        });
+
+        // NEW: Sidebar toggle button
+        sidebarToggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+
+        // NEW: Sidebar button event listeners
+        newProjectBtn.addEventListener('click', () => {
+            // Logic for a new project
+            appState.editorContent = '';
+            appState.chatHistory = [{ role: 'gemini', text: 'Hola! Soy tu asistente de líricas. Estoy aquí para ayudarte a escribir sorprendentes canciones.' }];
+            appState.progress = 0;
+            appState.goal = 100;
+            appState.activeMission = null;
+            currentFileHandle = null; // Reset file handle
+            
+            codeEditor.value = '';
+            chatMessages.innerHTML = '';
+            addChatMessage('gemini', 'Hola! Soy tu asistente de líricas. Estoy aquí para ayudarte a escribir sorprendentes canciones.');
+            updateLineNumbers();
+            updateProgressBar();
+            filenameTitle.textContent = "Proyecto sin título";
+            codeEditor.focus();
+        });
+
+        openFileBtn.addEventListener('click', openFile);
+        
+        saveBtn.addEventListener('click', saveFile);
+        
+        // Save modal event listeners
+        confirmSaveBtn.addEventListener('click', confirmSave);
+        cancelSaveBtn.addEventListener('click', () => {
+            saveModal.classList.add('hidden');
+        });
+
+        // Event listener for the filename title
+        filenameTitle.addEventListener('click', () => {
+            if (currentFileHandle) {
+                pathDisplay.textContent = currentFileHandle.name;
+                pathModal.classList.remove('hidden');
+            }
+        });
+
+        // Event listener to close the path modal
+        closePathModalBtn.addEventListener('click', () => {
+            pathModal.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
